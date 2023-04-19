@@ -1,0 +1,12 @@
+# Emacs
+*~
+
+# Python
+__pycache__
+
+# Jupyter
+*.ipynb
+.ipynb_checkpoints
+
+# macOS
+.DS_Store

@@ -1,0 +1,39 @@
+html {
+    padding: 0px;
+}
+
+a {
+    color: black;
+    text-decoration: underline;
+}
+
+body {
+    max-width: 55em;
+    padding: 20px;
+    margin: 0 auto;
+    font-family: 'IBM Plex Serif', serif;
+}
+
+h1 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 2em;
+    font-weight: normal;
+    margin: 1.5em 0 0 0;
+}
+
+section {
+    margin: 2em 0 0 0;
+}
+
+p.titletrans {
+    font-style: italic;
+    margin: 1em 0 0 0;
+}
+
+span.trans {
+    opacity: 0;
+}
+
+span.trans:hover {
+    opacity: 1;
+}
