@@ -1,6 +1,8 @@
 ### NHK Easy Reading Assistance
 
-A Flask application for assisting reading NHK Easy news articles. It uses [Fugashi](https://github.com/polm/fugashi) to parse the article title and text to identify verbs, adjectives and nouns. These are cross-referenced against WaniKani data to identify which words are below SRS level Guru II. For this words, a link is added for a Jisho search so you can find the words' meanings. Finally, Google Cloud Translation is used to translate the text (translations are initially shown hidden) .
+A Flask application for assisting reading NHK Easy news articles. It uses [Fugashi](https://github.com/polm/fugashi) to parse the article title and text to identify verbs, adjectives and nouns. These are cross-referenced against WaniKani data to identify which words are below SRS level Guru II. For these words, a link is added to a [Jisho](https://jisho.org/) search so you can find the words' meanings. Finally, Google Cloud Translation is used to translate the text (translations are initially shown hidden).
+
+This application uses code from [nhk-easy](https://github.com/nhk-news-web-easy/nhk-easy-api).
 
 # Requirements
 
