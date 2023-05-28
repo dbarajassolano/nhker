@@ -1,23 +1,17 @@
-{% extends 'base.html' %}
-
-{% block title %}
-{{ title.raw }}
-{% endblock %}
-
-{% block header %}
-<h1>
-  {{ title.parsed | safe }}
-</h1>
-<p class="titletrans">
-   <span class="trans">{{ title.translation | safe }}</span>
+<div id="article_content">
+  <header>
+    <h1>
+      {{ title.parsed | safe }}
+    </h1>
+    <p class="titletrans">
+      <span class="trans">{{ title.translation | safe }}</span>
+    </p>
+  </header>
+  <section>
+    {% for row in body %}
+    <p>{{ row.parsed | safe}}</p>
+    <p>&gt; <span class="trans">{{ row.translation | safe }}</span></p>
+    {% endfor %}
+  </section>
 </div>
-{% endblock %}
 
-{% block content %}
-<div>
-{% for row in body %}
-  <p>{{ row.parsed | safe}}</p>
-  <p>&gt; <span class="trans">{{ row.translation | safe }}</span></p>
-{% endfor %}
-</div>
-{% endblock %}
