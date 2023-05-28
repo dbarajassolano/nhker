@@ -1,24 +1,13 @@
 {% extends 'base.html' %}
 
 {% block title %}
-{{ title.raw }}
-{% endblock %}
-
-{% block header %}
-<h1>
-  {{ title.parsed | safe }}
-</h1>
-<p class="titletrans">
-   <span class="trans">{{ title.translation | safe }}</span>
-</div>
-
+記事一覧
 {% endblock %}
 
 {% block content %}
 <div>
-{% for row in body %}
-  <p>{{ row.parsed | safe}}</p>
-  <p>&gt; <span class="trans">{{ row.translation | safe }}</span></p>
+{% for article in articles %}
+  <p><a href="/{{ loop.index0 }}">{{ article[0] }}</a></p>
 {% endfor %}
 </div>
 {% endblock %}

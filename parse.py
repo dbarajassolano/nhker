@@ -81,38 +81,49 @@ def get_wk_url(url: str, headers: dict) -> list[dict]:
             break
     return data
 
-def parse_top_article() -> tuple[ParsedSentence, list[ParsedSentence]]:
+class NewsParser(object):
 
-    print('Downloading...')
-    title, body = Api().download_text_by_priority(0)
-    delimiter = '。'
-    body_rows = [e + delimiter for e in body.split(delimiter) if e]
+    def __init__(self) -> None:
 
-    print('Preparing tagger...')
-    tagger = Tagger()
-    
-    print('Preparing translator...')
-    pid = environ.get('PROJECT_ID', '')
-    assert pid, f'No Google Cloud Project ID'
-    parent = f'projects/{pid}'
-    client = translate.TranslationServiceClient()
-
-    print('Preparing WaniKani data...')
-    wk_token = environ.get('WK_TOKEN', '')
-    assert pid, f'No WaniKani token'
-    gurued_vocab = get_gurued_vocab(wk_token)
-    
-    print('Preparing parsing and translating (PTing) object...')
-    PT = ParserTranslator(tagger, parent, client, gurued_vocab)
-
-    print('PTing title...')
-    title_parsed = PT.translate_and_parse(title)
-
-    print('PTing body...')
-    body_parsed = []
-    for i in range(len(body_rows)):
-        print(f'{(i * 100 / len(body_rows)):{3}}%\tParsing: {body_rows[i]}')
-        body_parsed.append(PT.translate_and_parse(body_rows[i]))
-    print('100%')
+        print('Downloading articles...')
+        self.nhk = Api()
+        self.articles = self.get_articles()
         
-    return title_parsed, body_parsed
+        print('Preparing tagger...')
+        self.tagger = Tagger()
+        
+        print('Preparing translator...')
+        pid = environ.get('PROJECT_ID', '')
+        assert pid, f'No Google Cloud Project ID'
+        self.parent = f'projects/{pid}'
+        self.client = translate.TranslationServiceClient()
+
+        print('Preparing WaniKani data...')
+        wk_token = environ.get('WK_TOKEN', '')
+        assert pid, f'No WaniKani token'
+        self.gurued_vocab = get_gurued_vocab(wk_token)
+
+        print('Preparing parsing and translating (PTing) object...')
+        self.PT = ParserTranslator(self.tagger, self.parent, self.client, self.gurued_vocab)
+        
+    def get_articles(self) -> list[tuple[str, str]]:
+
+        return [self.nhk.download_text_by_priority(i) for i in range(len(self.nhk.top_news))]
+
+    def parse_article(self, id: int) -> tuple[ParsedSentence, list[ParsedSentence]]:
+
+        title, body = self.articles[id]
+        delimiter = '。'
+        body_rows = [e + delimiter for e in body.split(delimiter) if e]
+
+        print('PTing title...')
+        title_parsed = self.PT.translate_and_parse(title)
+
+        print('PTing body...')
+        body_parsed = []
+        for i in range(len(body_rows)):
+            print(f'{(i * 100 / len(body_rows)):{3}}%\tParsing: {body_rows[i]}')
+            body_parsed.append(self.PT.translate_and_parse(body_rows[i]))
+        print('100%')
+
+        return title_parsed, body_parsed

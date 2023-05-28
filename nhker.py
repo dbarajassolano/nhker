@@ -1,15 +1,21 @@
 import webbrowser
 from threading import Timer
 from flask import Flask, render_template
-from parse import parse_top_article
+from parse import NewsParser
 
 app = Flask(__name__)
 
+np = NewsParser()
+
 @app.route('/')
 def main():
-    title, body = parse_top_article()
-    return render_template('index.html', title=title, body=body)
+    return render_template('index.html', articles=np.articles)
 
+@app.route('/<int:article_id>')
+def show_article(article_id):
+    title, body = np.parse_article(article_id)
+    return render_template('article.html', title=title, body=body)
+    
 def open_browser():
       webbrowser.open_new("http://127.0.0.1:5000")
 
