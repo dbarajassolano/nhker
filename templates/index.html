@@ -1,19 +1,20 @@
 {% extends 'base.html' %}
 
 {% block title %}
-記事一覧
+NHK Easy Reader
 {% endblock %}
 
 {% block header %}
 <h1>
-  記事一覧
+  Log in
 </h1>
 {% endblock %}
 
 {% block content %}
-<div>
-{% for article in articles %}
-  <p><a href="/{{ loop.index0 }}">{{ article[0] }}</a></p>
-{% endfor %}
-</div>
+<form method="post">
+  <label for="wk_token">WK Token</label>
+  <input name="wk_token" id="wk_token">
+  <input type="submit" value="Submit">
+</form>
+<p><a href="/logout">Log out</a></p>
 {% endblock %}

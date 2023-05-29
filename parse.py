@@ -1,4 +1,5 @@
 from os import environ
+from sys import stderr
 from fugashi import Tagger
 from google.cloud import translate
 from collections import namedtuple
@@ -13,7 +14,7 @@ ParsedSentence = namedtuple('ParsedSentence', ['raw', 'parsed', 'translation'])
 class ParserTranslator(object):
     def __init__(self, tagger: Tagger, parent: str,
                  client: translate.TranslationServiceClient,
-                 gurued_vocab: list[str]) -> None:
+                 gurued_vocab: list[str] | None) -> None:
         self.tagger = tagger
         self.parent = parent
         self.client = client
@@ -22,7 +23,7 @@ class ParserTranslator(object):
     def parse_str(self, text: str) -> str:
         words = self.tagger(text)
         output = ''
-        
+
         for word in words:
             
             search_url = ''
@@ -41,8 +42,9 @@ class ParserTranslator(object):
             elif word.feature.pos1 == '副詞':
                 search_url = jisho_root + word.feature.lemma + '#adv'
 
-            if word.feature.lemma in self.gurued_vocab:
-                search_url = ''
+            if self.gurued_vocab is not None:
+                if word.feature.lemma in self.gurued_vocab:
+                    search_url = ''
 
             if search_url != '':
                 pron = word.feature.pron if word.feature.pron is not None else ''
@@ -61,26 +63,54 @@ class ParserTranslator(object):
         return ParsedSentence(raw=text, parsed=self.parse_str(text),
                               translation=self.translate_str(text))
 
-def get_gurued_vocab(wk_token: str) -> list[str]:
+def get_wk_username(wk_token: str) -> str | None:
+    if wk_token == '':
+        return None
     base_url = 'https://api.wanikani.com/v2/'
     headers = {'Authorization': 'Bearer ' + wk_token}
-    wk_data = get_wk_url(base_url + 'subjects?types=vocabulary', headers)
-    gurued_data = get_wk_url(base_url + 'assignments?subject_types=vocabulary&srs_stages=6,7,8,9', headers)
+    try:
+        wk_data = get_wk_data_from_url(base_url + 'user', headers)
+    except AssertionError:
+        print('Failed to get WK vocabulary', file=stderr)
+        return None
+    return wk_data[0]['username']
+
+def get_gurued_vocab(wk_token: str) -> list[str] | None:
+    if wk_token == '':
+        return None
+    base_url = 'https://api.wanikani.com/v2/'
+    headers = {'Authorization': 'Bearer ' + wk_token}
+    try:
+        wk_data = get_wk_data_from_url(base_url + 'subjects?types=vocabulary', headers)
+    except AssertionError:
+        print('Failed to get WK vocabulary', file=stderr)
+        return None
+    try:
+        gurued_data = get_wk_data_from_url(base_url + 'assignments?subject_types=vocabulary&srs_stages=6,7,8,9', headers)
+    except AssertionError:
+        print('Failed to get gurued vocabulary', file=stderr)
+        return None
     gurued_ids = [item['data']['subject_id'] for item in gurued_data]
     return [item['data']['characters'] for item in wk_data if item['id'] in gurued_ids]
     
-def get_wk_url(url: str, headers: dict) -> list[dict]:
+def get_wk_data_from_url(url: str, headers: dict) -> list[dict]:
     req = requests.get(url, headers=headers)
+    if req.status_code != 200:
+        raise AssertionError(f'Failed to get {url}, got code {req.status_code}')
     data = req.json()['data']
-    next_url = req.json()['pages']['next_url']
-    while True:
-        req = requests.get(next_url, headers=headers)
-        assert req.status_code==200, f'Failed to get {next_url}, got code {req.status_code}'
-        data = data + req.json()['data']
+    if 'pages' in req.json():
         next_url = req.json()['pages']['next_url']
-        if next_url is None:
-            break
-    return data
+        while True:
+            req = requests.get(next_url, headers=headers)
+            if req.status_code != 200:
+                raise AssertionError(f'Failed to get {next_url}, got code {req.status_code}')
+            data = data + req.json()['data']
+            next_url = req.json()['pages']['next_url']
+            if next_url is None:
+                break
+        return data
+    else:
+        return [data]
 
 class NewsParser(object):
 
@@ -95,16 +125,30 @@ class NewsParser(object):
         
         print('Preparing translator...')
         pid = environ.get('PROJECT_ID', '')
-        assert pid, f'No Google Cloud Project ID'
+        if pid == '':
+            raise AssertionError(f'No Google Cloud Project ID set in environment')
         self.parent = f'projects/{pid}'
         self.client = translate.TranslationServiceClient()
 
-        print('Preparing WaniKani data...')
-        wk_token = environ.get('WK_TOKEN', '')
-        assert pid, f'No WaniKani token'
-        self.gurued_vocab = get_gurued_vocab(wk_token)
+        self.wk_token = ''
+        self.wk_username = None
+        self.gurued_vocab = None
+        self.PT = ParserTranslator(self.tagger, self.parent, self.client, self.gurued_vocab)
 
-        print('Preparing parsing and translating (PTing) object...')
+    def set_wk_data(self, wk_token: str) -> int:
+        self.wk_token = wk_token
+        self.wk_username = get_wk_username(self.wk_token)
+        self.gurued_vocab = get_gurued_vocab(self.wk_token)
+        if self.wk_username is None or self.gurued_vocab is None:
+            return 1
+        else:
+            self.PT = ParserTranslator(self.tagger, self.parent, self.client, self.gurued_vocab)
+            return 0
+
+    def clear_wk_data(self) -> None:
+        self.wk_token = ''
+        self.wk_username = None
+        self.gurued_vocab = None
         self.PT = ParserTranslator(self.tagger, self.parent, self.client, self.gurued_vocab)
         
     def get_articles(self) -> list[tuple[str, str]]:

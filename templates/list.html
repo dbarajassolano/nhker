@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}
+記事一覧
+{% endblock %}
+
+{% block header %}
+<h1>
+  記事一覧
+</h1>
+{% endblock %}
+
+{% block content %}
+<p>Reading with token {{ session['wk_token'] }}</p>
+{% for article in articles %}
+<p><a href="/{{ loop.index0 }}">{{ article[0] }}</a></p>
+{% endfor %}
+<p><a href="/logout">Log out</a> <a href="/refresh">Refresh WK data</a></p>
+{% endblock %}
