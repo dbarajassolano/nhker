@@ -15,5 +15,5 @@
 {% for article in articles %}
 <p><a href="/{{ loop.index0 }}">{{ article[0] }}</a></p>
 {% endfor %}
-<p><a href="/refresh">Refresh WK data</a> <a href="/logout">Log out</a></p>
+<p><span class="bottomlink"><a href="/refresh">Refresh WK data</a> <a href="/logout">Log out</a></span></p>
 {% endblock %}

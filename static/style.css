@@ -34,6 +34,11 @@ span.wk_username {
     font-size: 0.5em;
 }
 
+span.bottomlink {
+    margin: 1em 0 0 0;
+    font-size: 0.8em;
+}
+
 span.trans {
     opacity: 0;
 }

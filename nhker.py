@@ -1,59 +1,83 @@
 import webbrowser
+import functools
 from threading import Timer
 from flask import Flask, redirect, render_template, request, session, url_for
-from parse import NewsParser
+from flask_session import Session
+from parse import NewsParser, get_articles
+from wk import get_gurued_vocab, get_wk_username
 
 app = Flask(__name__)
-app.secret_key = 'dev'
+sess = Session(app)
 
-np = NewsParser()
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if 'wk_username' not in session:
+            return redirect(url_for('index'))
+        return view(**kwargs)
+    return wrapped_view
+
+def set_wk_data(wk_token: str) -> None:
+    clear_wk_data()
+    session['wk_token'] = wk_token
+    session['wk_username'] = get_wk_username(wk_token)
+    session['gurued_vocab'] = get_gurued_vocab(wk_token)
+    if session['wk_username'] is None or session['gurued_vocab'] is None:
+        clear_wk_data()
+
+def clear_wk_data() -> None:
+    session['wk_token'] = ''
+    session['wk_username'] = None
+    session['gurued_vocab'] = None
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if 'wk_token' not in session:
         if request.method == 'POST':
-            session.permanent = True
             wk_token = request.form['wk_token']
-            status = np.set_wk_data(wk_token)
-            if status == 0:
-                session['wk_token'] = wk_token
-                session['wk_username'] = np.wk_username
-            else:
-                session['wk_token'] = ''
-                session['wk_username'] = ''
+            set_wk_data(wk_token)
             return redirect(url_for('list_articles'))
         return render_template('index.html')
     else:
         return redirect(url_for('list_articles'))
 
+@login_required
 @app.route('/list')
 def list_articles():
-    np.get_articles()
-    return render_template('list.html', articles=np.articles)
+    session['articles'] = get_articles()
+    return render_template('list.html', articles=session['articles'])
 
 @app.route('/refresh')
 def refresh():
-    np.set_wk_data(session['wk_token'])
+    set_wk_data(session['wk_token'])
     return redirect(url_for('list_articles'))
 
 @app.route('/logout')
 def logout():
     session.clear()
-    np.clear_wk_data()
     return redirect(url_for('index'))
 
+@login_required
 @app.route('/<int:article_id>')
 def show_article(article_id):
-    if not np.articles:
+    np = NewsParser()
+    if 'articles' not in session:
         return redirect(url_for('list_articles'))
-    if article_id >= len(np.articles):
+    if article_id >= len(session['articles']):
         return redirect(url_for('list_articles'))
-    title, body = np.parse_article_threaded(article_id)
+    title, body = np.parse_article_threaded(article_id, session['articles'], session['gurued_vocab'])
     return render_template('article.html', title=title, body=body)
     
 def open_browser():
       webbrowser.open_new("http://127.0.0.1:5000")
 
 if __name__ == '__main__':
-    Timer(1, open_browser).start()
+    #Timer(1, open_browser).start()
+
+    app.config.from_mapping(
+        SECRET_KEY = 'dev',
+        SESSION_TYPE = 'redis',
+        SESSION_PERMANENT = True
+    )
+    sess.init_app(app)
     app.run(port=5000)

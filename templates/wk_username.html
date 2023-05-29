@@ -1,4 +1,4 @@
-{% if session['wk_username'] == '' %}
+{% if (session['wk_username'] == '' or session['wk_username'] == None) %}
 <p><span class="wk_username">Reading without WK data</span></p>
 {% else %}
 <p><span class="wk_username">Reading for WK user {{ session['wk_username'] }}</p>
