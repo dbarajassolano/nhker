@@ -41,9 +41,10 @@ def index():
     else:
         return redirect(url_for('list_articles'))
 
-@login_required
 @app.route('/list')
+@login_required
 def list_articles():
+    print(session['wk_username'])
     session['articles'] = get_articles()
     return render_template('list.html', articles=session['articles'])
 
@@ -57,8 +58,8 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
-@login_required
 @app.route('/<int:article_id>')
+@login_required
 def show_article(article_id):
     np = NewsParser()
     if 'articles' not in session:
