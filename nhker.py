@@ -13,7 +13,7 @@ def main():
 
 @app.route('/<int:article_id>')
 def show_article(article_id):
-    title, body = np.parse_article(article_id)
+    title, body = np.parse_article_threaded(article_id)
     return render_template('article.html', title=title, body=body)
     
 def open_browser():
