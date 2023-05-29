@@ -4,6 +4,7 @@ from google.cloud import translate
 from collections import namedtuple
 from nhk_easy_api import Api
 import requests
+import concurrent.futures
 
 jisho_root = 'https://jisho.org/search/'
 
@@ -125,5 +126,20 @@ class NewsParser(object):
             print(f'{(i * 100 / len(body_rows)):{3}}%\tParsing: {body_rows[i]}')
             body_parsed.append(self.PT.translate_and_parse(body_rows[i]))
         print('100%')
+
+        return title_parsed, body_parsed
+
+    def parse_article_threaded(self, id: int) -> tuple[ParsedSentence, list[ParsedSentence]]:
+
+        title, body = self.articles[id]
+        delimiter = '。'
+        body_rows = [e + delimiter for e in body.split(delimiter) if e]
+
+        print('PTing title...')
+        title_parsed = self.PT.translate_and_parse(title)
+
+        print('PTing body...')
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            body_parsed = list(executor.map(self.PT.translate_and_parse, body_rows))
 
         return title_parsed, body_parsed

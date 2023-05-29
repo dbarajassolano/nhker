@@ -15,7 +15,7 @@ def main():
 
 def update_article(article_id: int) -> None:
     with app.app_context():
-        title, body = np.parse_article(article_id)
+        title, body = np.parse_article_threaded(article_id)
         turbo.push(turbo.replace(render_template('article.html', title=title, body=body), 'article_content'))
 
 @app.route('/<int:article_id>')
