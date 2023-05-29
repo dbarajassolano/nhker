@@ -15,12 +15,14 @@ class ParserTranslator(object):
     def __init__(self, tagger: Tagger, parent: str,
                  client: translate.TranslationServiceClient,
                  gurued_vocab: list[str] | None) -> None:
+        
         self.tagger = tagger
         self.parent = parent
         self.client = client
         self.gurued_vocab = gurued_vocab
 
     def parse_str(self, text: str) -> str:
+        
         words = self.tagger(text)
         output = ''
 
@@ -64,6 +66,7 @@ class ParserTranslator(object):
                               translation=self.translate_str(text))
 
 def get_wk_username(wk_token: str) -> str | None:
+    
     if wk_token == '':
         return None
     base_url = 'https://api.wanikani.com/v2/'
@@ -76,6 +79,7 @@ def get_wk_username(wk_token: str) -> str | None:
     return wk_data[0]['username']
 
 def get_gurued_vocab(wk_token: str) -> list[str] | None:
+    
     if wk_token == '':
         return None
     base_url = 'https://api.wanikani.com/v2/'
@@ -94,6 +98,7 @@ def get_gurued_vocab(wk_token: str) -> list[str] | None:
     return [item['data']['characters'] for item in wk_data if item['id'] in gurued_ids]
     
 def get_wk_data_from_url(url: str, headers: dict) -> list[dict]:
+    
     req = requests.get(url, headers=headers)
     if req.status_code != 200:
         raise AssertionError(f'Failed to get {url}, got code {req.status_code}')
@@ -118,7 +123,7 @@ class NewsParser(object):
 
         print('Downloading articles...')
         self.nhk = Api()
-        self.articles = self.get_articles()
+        self.articles = []
         
         print('Preparing tagger...')
         self.tagger = Tagger()
@@ -136,6 +141,7 @@ class NewsParser(object):
         self.PT = ParserTranslator(self.tagger, self.parent, self.client, self.gurued_vocab)
 
     def set_wk_data(self, wk_token: str) -> int:
+        
         self.wk_token = wk_token
         self.wk_username = get_wk_username(self.wk_token)
         self.gurued_vocab = get_gurued_vocab(self.wk_token)
@@ -146,17 +152,22 @@ class NewsParser(object):
             return 0
 
     def clear_wk_data(self) -> None:
+        
         self.wk_token = ''
         self.wk_username = None
         self.gurued_vocab = None
         self.PT = ParserTranslator(self.tagger, self.parent, self.client, self.gurued_vocab)
         
-    def get_articles(self) -> list[tuple[str, str]]:
+    def get_articles(self) -> None:
 
-        return [self.nhk.download_text_by_priority(i) for i in range(len(self.nhk.top_news))]
+        self.articles = [self.nhk.download_text_by_priority(i) for i in range(len(self.nhk.top_news))]
 
     def parse_article(self, id: int) -> tuple[ParsedSentence, list[ParsedSentence]]:
-
+        
+        if not self.articles:
+            return (ParsedSentence(raw='', parsed='', translation=''),
+                    [ParsedSentence(raw='', parsed='', translation='')])
+        
         title, body = self.articles[id]
         delimiter = '。'
         body_rows = [e + delimiter for e in body.split(delimiter) if e]
@@ -175,6 +186,10 @@ class NewsParser(object):
 
     def parse_article_threaded(self, id: int) -> tuple[ParsedSentence, list[ParsedSentence]]:
 
+        if not self.articles:
+            return (ParsedSentence(raw='', parsed='', translation=''),
+                    [ParsedSentence(raw='', parsed='', translation='')])
+        
         title, body = self.articles[id]
         delimiter = '。'
         body_rows = [e + delimiter for e in body.split(delimiter) if e]

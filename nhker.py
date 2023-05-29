@@ -14,7 +14,7 @@ def index():
         if request.method == 'POST':
             session.permanent = True
             wk_token = request.form['wk_token']
-            status = np.set_wk_data(session['wk_token'])
+            status = np.set_wk_data(wk_token)
             if status == 0:
                 session['wk_token'] = wk_token
                 session['wk_username'] = np.wk_username
@@ -28,6 +28,7 @@ def index():
 
 @app.route('/list')
 def list_articles():
+    np.get_articles()
     return render_template('list.html', articles=np.articles)
 
 @app.route('/refresh')
@@ -43,6 +44,10 @@ def logout():
 
 @app.route('/<int:article_id>')
 def show_article(article_id):
+    if not np.articles:
+        return redirect(url_for('list_articles'))
+    if article_id >= len(np.articles):
+        return redirect(url_for('list_articles'))
     title, body = np.parse_article_threaded(article_id)
     return render_template('article.html', title=title, body=body)
     

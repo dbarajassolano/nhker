@@ -5,6 +5,7 @@
 {% endblock %}
 
 {% block header %}
+{% include "wk_username.html" %}
 <h1>
   {{ title.parsed | safe }}
 </h1>
@@ -14,12 +15,11 @@
 {% endblock %}
 
 {% block content %}
-<p>Reading with token {{ session['wk_token'] }}</p>
 <div>
 {% for row in body %}
   <p>{{ row.parsed | safe}}</p>
   <p>&gt; <span class="trans">{{ row.translation | safe }}</span></p>
 {% endfor %}
 </div>
-<p><a href="/logout">Log out</a></p>
+<p><a href="/list">Back</a> <a href="/logout">Log out</a></p>
 {% endblock %}

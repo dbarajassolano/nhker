@@ -17,13 +17,7 @@ body {
 h1 {
     font-size: 2em;
     font-weight: normal;
-    margin: 1.5em 0 0 0;
-}
-
-h2 {
-    font-size: 1.5em;
-    font-weight: normal;
-    margin: 1.5em 0 0 0;
+    margin: 1em 0 0 0;
 }
 
 section {
@@ -33,6 +27,11 @@ section {
 p.titletrans {
     font-style: italic;
     margin: 1em 0 0 0;
+}
+
+span.wk_username {
+    font-style: italic;
+    font-size: 0.5em;
 }
 
 span.trans {

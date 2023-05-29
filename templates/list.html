@@ -5,15 +5,15 @@
 {% endblock %}
 
 {% block header %}
+{% include "wk_username.html" %}
 <h1>
   記事一覧
 </h1>
 {% endblock %}
 
 {% block content %}
-<p>Reading with token {{ session['wk_token'] }}</p>
 {% for article in articles %}
 <p><a href="/{{ loop.index0 }}">{{ article[0] }}</a></p>
 {% endfor %}
-<p><a href="/logout">Log out</a> <a href="/refresh">Refresh WK data</a></p>
+<p><a href="/refresh">Refresh WK data</a> <a href="/logout">Log out</a></p>
 {% endblock %}
