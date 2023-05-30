@@ -19,16 +19,22 @@ def login_required(view):
 
 def set_wk_data(wk_token: str) -> None:
     clear_wk_data()
+    print('Downloading WK data...', end=' ', flush=True)
     session['wk_token'] = wk_token
     session['wk_username'] = get_wk_username(wk_token)
     session['gurued_vocab'] = get_gurued_vocab(wk_token)
     if session['wk_username'] is None or session['gurued_vocab'] is None:
+        print('Failed to get WK data')
         clear_wk_data()
+    else:
+        print('Done')
 
 def clear_wk_data() -> None:
+    print('Clearing session data...', end=' ', flush=True)
     session['wk_token'] = ''
     session['wk_username'] = None
     session['gurued_vocab'] = None
+    print('Done')
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
@@ -44,7 +50,6 @@ def index():
 @app.route('/list')
 @login_required
 def list_articles():
-    print(session['wk_username'])
     session['articles'] = get_articles()
     return render_template('list.html', articles=session['articles'])
 
@@ -55,6 +60,7 @@ def refresh():
 
 @app.route('/logout')
 def logout():
+    print('Clearing session data')
     session.clear()
     return redirect(url_for('index'))
 
@@ -66,7 +72,7 @@ def show_article(article_id):
         return redirect(url_for('list_articles'))
     if article_id >= len(session['articles']):
         return redirect(url_for('list_articles'))
-    title, body = np.parse_article_threaded(article_id, session['articles'], session['gurued_vocab'])
+    title, body = np.parse_article(article_id, session['articles'], session['gurued_vocab'], threaded=True)
     return render_template('article.html', title=title, body=body)
     
 def open_browser():

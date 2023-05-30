@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock %} - NHK Easy Reader</title>
+    <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Serif|IBM+Plex+Sans|IBM+Plex+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <article class="searchable">
+      <header>
+	{% block header %}{% endblock %}
+      </header>
+      <section>
+	{% block content %}{% endblock %}
+      </section>
+    </article>
+    <template><span id="control"></span></template>
+    <p><span class="bottomlink"><a href="/list">Back</a> <a href="/logout">Log out</a></span></p>
+    <script>
+      {% block script %}{% endblock %}
+    </script>
+  </body>
+</html>

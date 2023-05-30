@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'article_base.html' %}
 
 {% block title %}
 {{ title.raw }}
@@ -15,11 +15,35 @@
 {% endblock %}
 
 {% block content %}
-<div>
 {% for row in body %}
   <p>{{ row.parsed | safe}}</p>
   <p>&gt; <span class="trans">{{ row.translation | safe }}</span></p>
 {% endfor %}
-</div>
-<p><span class="bottomlink"><a href="/list">Back</a> <a href="/logout">Log out</a></span></p>
+{% endblock %}
+
+{% block script %}
+
+var control = document.importNode(document.querySelector('template').content, true).childNodes[0];
+control.addEventListener('pointerdown', oncontroldown, true);
+document.querySelector('.searchable').onpointerup = ()=>{
+  let selection = document.getSelection(), text = selection.toString();
+  if (text !== "") {
+    let rect = selection.getRangeAt(0).getBoundingClientRect();
+    control.style.top = `calc(${rect.top}px - 48px)`;
+    control.style.left = `calc(${rect.left}px + calc(${rect.width}px / 2) - 40px)`;
+    control['text']= text; 
+    document.body.appendChild(control);
+  }
+}
+function oncontroldown(event) {
+  window.open(`https://jisho.org/search/${this.text}`);
+  this.remove();
+  document.getSelection().removeAllRanges();
+  event.stopPropagation();
+}
+document.onpointerdown = ()=>{  
+  let control = document.querySelector('#control');
+  if (control !== null) {control.remove();document.getSelection().removeAllRanges();}
+}
+
 {% endblock %}
