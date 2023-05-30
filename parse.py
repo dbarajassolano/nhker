@@ -1,6 +1,6 @@
 from os import environ
 from functools import partial
-from fugashi import Tagger
+from fugashi import Tagger #pyright: ignore
 from google.cloud import translate
 from collections import namedtuple
 from nhk_easy_api import Api
