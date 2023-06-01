@@ -74,18 +74,18 @@ class NewsParser(object):
     def __init__(self) -> None:
 
         print('Preparing tagger...', end=' ', flush=True)
-        self.tagger = Tagger()
+        tagger = Tagger()
         print('Done')
         
         print('Preparing translator...', end=' ', flush=True)
         pid = environ.get('PROJECT_ID', '')
         if pid == '':
             raise AssertionError(f'No Google Cloud Project ID set in environment')
-        self.parent = f'projects/{pid}'
-        self.client = translate.TranslationServiceClient()
+        parent = f'projects/{pid}'
+        client = translate.TranslationServiceClient()
         print('Done')
 
-        self.PT = ParserTranslator(self.tagger, self.parent, self.client)
+        self.PT = ParserTranslator(tagger, parent, client)
 
     def parse_article(self, id: int, articles: list[tuple[str, str]], gurued_vocab: list[str] | None, threaded=False) -> tuple[ParsedSentence, list[ParsedSentence]]:
 
