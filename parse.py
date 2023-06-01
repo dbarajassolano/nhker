@@ -1,10 +1,8 @@
 from os import environ
-from functools import partial
 from fugashi import Tagger #pyright: ignore
 from google.cloud import translate
 from collections import namedtuple
 from nhk_easy_api import Api
-import concurrent.futures
 
 jisho_root = 'https://jisho.org/search/'
 
@@ -17,13 +15,21 @@ def get_articles() -> list[tuple[str, str]]:
     print('Done')
     return articles
 
-class ParserTranslator(object):
-    def __init__(self, tagger: Tagger, parent: str,
-                 client: translate.TranslationServiceClient) -> None:
+class NewsParser(object):
+
+    def __init__(self) -> None:
+
+        print('Preparing tagger...', end=' ', flush=True)
+        self.tagger = Tagger()
+        print('Done')
         
-        self.tagger = tagger
-        self.parent = parent
-        self.client = client
+        print('Preparing translator...', end=' ', flush=True)
+        pid = environ.get('PROJECT_ID', '')
+        if pid == '':
+            raise AssertionError(f'No Google Cloud Project ID set in environment')
+        self.parent = f'projects/{pid}'
+        self.client = translate.TranslationServiceClient()
+        print('Done')
 
     def parse_str(self, text: str, gurued_vocab: list[str] | None) -> str:
         
@@ -60,59 +66,35 @@ class ParserTranslator(object):
 
         return output
 
-    def translate_str(self, text: str) -> str:
-        response = self.client.translate_text(parent=self.parent,
-                                              contents=[text], target_language_code='en')
-        return response.translations[0].translated_text
-
-    def translate_and_parse(self, text: str, gurued_vocab) -> ParsedSentence:
-        return ParsedSentence(raw=text, parsed=self.parse_str(text, gurued_vocab),
-                              translation=self.translate_str(text))
-
-class NewsParser(object):
-
-    def __init__(self) -> None:
-
-        print('Preparing tagger...', end=' ', flush=True)
-        tagger = Tagger()
-        print('Done')
-        
-        print('Preparing translator...', end=' ', flush=True)
-        pid = environ.get('PROJECT_ID', '')
-        if pid == '':
-            raise AssertionError(f'No Google Cloud Project ID set in environment')
-        parent = f'projects/{pid}'
-        client = translate.TranslationServiceClient()
-        print('Done')
-
-        self.PT = ParserTranslator(tagger, parent, client)
-
-    def parse_article(self, id: int, articles: list[tuple[str, str]], gurued_vocab: list[str] | None, threaded=False) -> tuple[ParsedSentence, list[ParsedSentence]]:
+    def parse_article(self, id: int, articles: list[tuple[str, str]], gurued_vocab: list[str] | None) -> tuple[ParsedSentence, list[ParsedSentence]]:
 
         if not articles:
             return (ParsedSentence(raw='', parsed='', translation=''),
                     [ParsedSentence(raw='', parsed='', translation='')])
-        
+
         title, body = articles[id]
         delimiter = '。'
         body_rows = [e + delimiter for e in body.split(delimiter) if e]
 
         print('Parsing and translating title...', end=' ', flush=True)
-        title_parsed = self.PT.translate_and_parse(title, gurued_vocab)
+        response = self.client.translate_text(parent=self.parent,
+                                              contents=[title], target_language_code='en')
+        translated_title = response.translations[0].translated_text
+        title_parsed = ParsedSentence(raw=title, parsed=self.parse_str(title, gurued_vocab),
+                                      translation=translated_title)
         print('Done')
 
-        if threaded:
-            print('Parsing and translating body using threads...', end=' ', flush=True)
-            partial_PT = partial(self.PT.translate_and_parse, gurued_vocab=gurued_vocab)
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                body_parsed = list(executor.map(partial_PT, body_rows))
-        else:
-            print('Parsing and translating body...', end=' ', flush=True)
-            body_parsed = []
-            for i in range(len(body_rows)):
-                print(f'{(i * 100 / len(body_rows)):{3}}%\tParsing: {body_rows[i]}')
-                body_parsed.append(self.PT.translate_and_parse(body_rows[i], gurued_vocab))
-            
+        print('Parsing body...', end=' ', flush=True)
+        parsed_rows = []
+        for line in body_rows:
+            parsed_rows.append(self.parse_str(line, gurued_vocab))
         print('Done')
+
+        print('Translating body...', end=' ', flush=True)
+        translate_response = self.client.translate_text(parent=self.parent, contents=body_rows, target_language_code='en')
+        translated_rows = [translation.translated_text for translation in translate_response.translations]
+        print('Done')
+        
+        body_parsed = [ParsedSentence(raw=line, parsed=parsed_line, translation=translated_line) for (line, parsed_line, translated_line) in zip(body_rows, parsed_rows, translated_rows)]
 
         return title_parsed, body_parsed

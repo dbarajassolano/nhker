@@ -1,4 +1,3 @@
-import webbrowser
 import functools
 from flask import Flask, redirect, render_template, request, session, url_for
 from flask_session import Session
@@ -71,7 +70,7 @@ def show_article(article_id):
         return redirect(url_for('list_articles'))
     if article_id >= len(session['articles']):
         return redirect(url_for('list_articles'))
-    title, body = np.parse_article(article_id, session['articles'], session['gurued_vocab'], threaded=True)
+    title, body = np.parse_article(article_id, session['articles'], session['gurued_vocab'])
     return render_template('article.html', title=title, body=body)
     
 if __name__ == '__main__':
