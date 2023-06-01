@@ -1,6 +1,5 @@
 import webbrowser
 import functools
-from threading import Timer
 from flask import Flask, redirect, render_template, request, session, url_for
 from flask_session import Session
 from parse import NewsParser, get_articles
@@ -75,11 +74,7 @@ def show_article(article_id):
     title, body = np.parse_article(article_id, session['articles'], session['gurued_vocab'], threaded=True)
     return render_template('article.html', title=title, body=body)
     
-def open_browser():
-      webbrowser.open_new("http://127.0.0.1:5000")
-
 if __name__ == '__main__':
-    #Timer(1, open_browser).start()
 
     app.config.from_mapping(
         SECRET_KEY = 'dev',

@@ -28,9 +28,10 @@ control.addEventListener('pointerdown', oncontroldown, true);
 document.querySelector('.searchable').onpointerup = ()=>{
   let selection = document.getSelection(), text = selection.toString();
   if (text !== "") {
+    let bodyRect = document.body.getBoundingClientRect();
     let rect = selection.getRangeAt(0).getBoundingClientRect();
-    control.style.top = `calc(${rect.top}px - 48px)`;
-    control.style.left = `calc(${rect.left}px + calc(${rect.width}px / 2) - 40px)`;
+    control.style.top = `calc(${rect.top}px + ${window.scrollY}px - 48px)`;
+    control.style.left = `calc(${rect.left}px + ${window.scrollX}px + calc(${rect.width}px / 2) - 40px)`;
     control['text']= text; 
     document.body.appendChild(control);
   }
