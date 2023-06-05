@@ -1,4 +1,3 @@
-
 from sys import stderr
 from flask import session
 import requests
