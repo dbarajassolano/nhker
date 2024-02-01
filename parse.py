@@ -5,13 +5,14 @@ from collections import namedtuple
 from nhk_easy_api import Api
 
 jisho_root = 'https://jisho.org/search/'
-
 ParsedSentence = namedtuple('ParsedSentence', ['raw', 'parsed', 'translation'])
+max_articles = 5
 
 def get_articles() -> list[tuple[str, str]]:
     print('Downloading articles...', end=' ', flush=True)
     nhk = Api()
-    articles = [nhk.download_text_by_priority(i) for i in range(len(nhk.top_news))]
+    narticles = min(len(nhk.top_news), max_articles)
+    articles = [nhk.download_text_by_priority(i) for i in range(narticles)]
     print('Done')
     return articles
 
@@ -85,6 +86,7 @@ class NewsParser(object):
         title, body = articles[id]
         delimiter = '。'
         body_rows = [e + delimiter for e in body.split(delimiter) if e]
+        print(body_rows)
 
         print('Parsing and translating title...', end=' ', flush=True)
         response = self.client.translate_text(parent=self.parent,
